@@ -8,7 +8,7 @@ namespace RyzenPerf
 {
     [CoreJob]
     [ClrJob]
-    public class Benchmark
+    public class OriginalBenchmark
     {
         private const int SharedArrayPoolMaxBufferSize = 1024 * 1024;
         private const int SourceDataLength = 3000000;
@@ -30,7 +30,7 @@ namespace RyzenPerf
         }
 
         [Benchmark]
-        public void Run()
+        public void Original()
         {
             stream.Seek(0, SeekOrigin.Begin);
             StreamWrite(unmanagedBuffer, SourceDataLength);

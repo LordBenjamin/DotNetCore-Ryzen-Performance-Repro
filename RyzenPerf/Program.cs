@@ -6,7 +6,7 @@ namespace RyzenPerf
     {
         static void Main(string[] args)
         {
-            BenchmarkRunner.Run<Benchmark>();
+            BenchmarkRunner.Run<StreamWriteBenchmark>();
         }
     }
 }
