@@ -46,39 +46,44 @@ namespace RyzenPerf
                 size < SharedArrayPoolMaxBufferSize ? (int)size : SharedArrayPoolMaxBufferSize);
 
             int writeSize = (int)Math.Min(managedBuffer.Length, size);
-            uint numWrites = (uint)Math.Ceiling(size / (float)writeSize);
 
             byte* ptr = (byte*)buffer.ToPointer();
             uint writeCount = 0;
 
             int bytesWritten = 0;
 
+            int remainder;
+            int iterations = Math.DivRem(checked((int)size), writeSize, out remainder);
+
             try
             {
-                while (writeCount < numWrites)
-                {
-                    int remainder = (int)((size - bytesWritten) % writeSize);
-                    int actualWriteSize = remainder > 0 ? remainder : writeSize;
+                // Copy bytes that don't divide exactly into the buffer size
+                ReadOnlySpan<byte> source = new ReadOnlySpan<byte>(ptr, remainder);
+                source.CopyTo(managedBuffer);
+                stream.Write(managedBuffer, 0, remainder);
 
-                    ReadOnlySpan<byte> source = new ReadOnlySpan<byte>(ptr, actualWriteSize);
-                    ptr += actualWriteSize;
+                // Repeated full-buffer copies
+                while (writeCount < iterations)
+                {
+                    source = new ReadOnlySpan<byte>(ptr, writeSize);
+                    ptr += writeSize;
 
                     source.CopyTo(managedBuffer);
 
                     // Commenting this line out makes the .NET Core benchmark run faster than Framework
                     // on a Ryzen 1200 CPU
-                    stream.Write(managedBuffer, 0, actualWriteSize);
+                    stream.Write(managedBuffer, 0, writeSize);
 
                     writeCount++;
-                    bytesWritten += actualWriteSize;
+                    bytesWritten += writeSize;
                 }
-
-                return writeCount;
             }
             finally
             {
                 arrayPool.Return(managedBuffer);
             }
+
+            return writeCount + 1;
         }
     }
 
